@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+        <meta name="description" content="">
+        <meta name="author" content="">
+        <link href="https://fonts.googleapis.com/css?family=Poppins:100,100i,200,200i,300,300i,400,400i,500,500i,600,600i,700,700i,800,800i,900,900i&display=swap" rel="stylesheet">
+        <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/bootstrap.min.css') }}">
+        <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/font-awesome.css') }}">
+        <link rel="stylesheet" href="{{ url_for('static', filename='css/templatemo-training-studio.css') }}">
+
+        <title>Home</title>
+    </head>
+    
+    <body>
+        <header class="header-area header-sticky" style="background-color: #2C394B;">
+            <div class="container">
+                <div class="row">
+                    <div class="col-12">
+                        <nav class="main-nav">
+                            <a href="{{ url_for('index') }}" class="logo">Easy<em> Fitness</em></a>
+                            <ul class="nav">
+                                <li class="scroll-to-section"><a href="{{ url_for('index') }}" class="active">Home</a></li>
+                             
+                                {% if current_user.is_authenticated %}
+                                <li class="scroll-to-section"><a href="{{ url_for('all_workouts') }}">Workouts</a></li>
+                                <li class="scroll-to-section"><a href="{{ url_for('workout_log') }}">Workout History</a></li>
+                                <li class="scroll-to-section"><a href="{{ url_for('profile') }}">My profile</a></li>
+                                <li class="main-button"><a href="{{ url_for('logout') }}">Logout</a></li>
+                                 
+                                {% endif %}
+                                {% if not current_user.is_authenticated %}
+                                <li class="main-button"><a href="{{ url_for('login') }}">Sign In</a></li>
+                                {% endif %}
+                            </ul>        
+                            <a class='menu-trigger'>
+                                <span>Menu</span>
+                            </a>
+                        </nav>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <section class="section" id="features">
+            <div class="container">
+                <div class="row">
+                    <div class="col-lg-6 offset-lg-3">
+                        <div class="section-heading">
+                            <h2>ABOUT <em>WEBSITE</em></h2>
+                       
+                            <p style="font-size: larger;">On our website you can <b>follow others workouts, create your own workouts, track your progress!</b></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        {% if not current_user.is_authenticated %}
+        <section class="section" id="call-to-action">
+            <div class="container">
+                <div class="row">
+                    <div class="col-lg-10 offset-lg-1">
+                        <div class="cta-content">
+                            <h2 style="color: black;">Start to <em>track </em>your workouts <em>efficiently</em></h2>
+                            <p> </p> 
+                            <div class="main-button scroll-to-section">
+                                <a href="{{ url_for('register') }}">Register</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+        </body>
+        </section>
+
+      
+
+   
+</html>

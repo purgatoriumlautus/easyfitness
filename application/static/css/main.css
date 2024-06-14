@@ -1,0 +1,35 @@
+.navbar {
+    padding-left: 40px;
+    padding-right: 20px;
+}
+
+.modal {
+    color: black;
+}
+.pagination {
+    position: fixed;
+    bottom: 50px;
+    left: 50%;
+    right: 0;
+    text-align: center;
+}
+.small-image {
+    width: 110px;
+    height: auto;
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+}
+.card {
+    margin-bottom: 20px;
+}
+
+.card {
+    border: 10px solid #000;
+    border-width: 5px;
+}
+
+.card:hover {
+    transform: scale(1.02);
+    transition: transform .2s;
+}
