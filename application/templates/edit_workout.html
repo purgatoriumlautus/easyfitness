@@ -1,0 +1,87 @@
+{% extends 'base.html' %}
+{% block title %}Edit Workout{% endblock %}
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="card-title mb-0">Edit Workout</h3>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('edit_workout', workout_id=workout.id) }}" id="workout">
+                        <div class="form-group row">
+                            <label for="name" class="col-sm-2 col-form-label">Workout Name</label>
+                            <div class="col-sm-10">
+                                <input type="text" class="form-control" name="name" value="{{ workout.name }}" placeholder="Workout name" required>
+                            </div>
+                        </div>
+                        <div id="exerciseSets">
+                            {% for exercise_set in workout.exercisesets %}
+                            <div class="exercise-set mb-3 border rounded p-3">
+                                <select name="exercise[]" class="form-select mb-2" required>
+                                    <option selected disabled value="">Select an exercise</option>
+                                    {% for exercise in exercises %}
+                                        <option value="{{ exercise.id }}" {% if exercise.id == exercise_set.exercise.id %}selected{% endif %}>{{ exercise.name }}</option>
+                                    {% endfor %}
+                                </select>
+                                <div class="row">
+                                    <div class="col">
+                                        <label class="form-label">Weight</label>
+                                        <input type="number" class="form-control" name="weight[]" value="{{ exercise_set.weight }}" required>
+                                    </div>
+                                    <div class="col">
+                                        <label class="form-label">Repetitions</label>
+                                        <input type="number" class="form-control" name="reps[]" value="{{ exercise_set.reps }}" required>
+                                    </div>
+                                    <div class="col">
+                                        <label class="form-label">Sets</label>
+                                        <input type="number" class="form-control" name="sets[]" value="{{ exercise_set.sets }}" required>
+                                    </div>
+                                </div>
+                                <button type="button" class="btn btn-danger mt-2 remove-exercise">Remove Exercise</button>
+                                <hr>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </form>
+                </div>
+                <div class="card-footer d-flex justify-content-between">
+                    <button type="button" id="addExercise" class="btn btn-primary">Add Exercise</button>
+                    <button type="submit" form="workout" class="btn btn-success">Save Changes</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    document.getElementById('addExercise').addEventListener('click', function() {
+        var exerciseSet = document.querySelector('.exercise-set').cloneNode(true);
+        document.getElementById('exerciseSets').appendChild(exerciseSet);
+
+        // Add event listener to the new "Remove Exercise" button
+        var removeButton = exerciseSet.querySelector('.remove-exercise');
+        removeButton.addEventListener('click', function() {
+            var exerciseSets = document.querySelectorAll('.exercise-set');
+
+            if (exerciseSets.length > 1) {
+                this.parentElement.remove();
+            }
+        });
+    });
+
+    document.addEventListener('DOMContentLoaded', function() {
+        var removeButtons = document.querySelectorAll('.remove-exercise');
+
+        removeButtons.forEach(function(removeButton) {
+            removeButton.addEventListener('click', function() {
+                var exerciseSets = document.querySelectorAll('.exercise-set');
+
+                if (exerciseSets.length > 1) {
+                    this.parentElement.remove();
+                }
+            });
+        });
+    });
+</script>
+{% endblock %}

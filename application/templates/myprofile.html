@@ -1,9 +1,23 @@
 {% extends 'base.html' %}
 {% block title %}{{ user.username }}'s Profile{% endblock %}
 {% block content %}
-    <h1>{{ user.username }}'s Profile</h1>
-    <p>First name: {{ user.firstname }}</p>
-    <p>Last name: {{ user.lastname }}</p>
-    <p>Height: {{ user.height }}</p>
-    <p>Weight: {{ user.weight }}</p>
+<div class="container mt-4">
+    <div class="card shadow">
+        <div class="card-body">
+            <h1 class="card-title">{{ user.username }}'s Profile</h1>
+            <p class="card-text"><strong>First name:</strong> {{ user.firstname }}</p>
+            <p class="card-text"><strong>Last name:</strong> {{ user.lastname }}</p>
+            <p class="card-text"><strong>Height:</strong> {{ user.height }}</p>
+            <p class="card-text"><strong>Weight:</strong> {{ user.weight }}</p>
+            <div class="d-flex justify-content-center mt-3">
+                <a href="{{ url_for('favorite_workouts') }}" class="btn btn-primary me-2" style="border-radius: 20px;">
+                    Favourite Workouts
+                </a>
+                <a href="{{ url_for('created_workouts') }}" class="btn btn-primary" style="border-radius: 20px;">
+                    Created Workouts
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}

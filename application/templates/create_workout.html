@@ -1,42 +1,49 @@
 {% extends 'base.html' %}
 {% block title %}Add Workout{% endblock %}
 {% block content %}
-<br>
-<div class="container">
-    <div class="row">
-        <div class="col-md-6">
-            <form method="POST" action="{{ url_for('create_workout') }}" id="workout">
-                <div class="row">
-                    <div class="col">
-                        <input type="text" class="form-control" name="name" placeholder="Workout name" required>
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="card-title mb-0">Create Workout</h3>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('create_workout') }}" id="workout">
+                        <div class="mb-3">
+                            <label for="name" class="form-label">Workout Name</label>
+                            <input type="text" class="form-control" name="name" placeholder="Enter workout name" required>
+                        </div>
                         
-                    </div>
-                    <div class="col">
-                        <button type="submit" class="btn btn-success" >Create workout</button>
-                    
-                    </div>
-                    
+                        <div id="exerciseSets">
+                            <div class="exercise-set mb-3 border rounded p-3">
+                                <select name="exercise[]" class="form-select mb-2" required>
+                                    <option selected disabled value="">Select an exercise</option>
+                                    {% for exercise in exercises %}
+                                    <option value="{{ exercise.id }}">{{ exercise.name }}</option>
+                                    {% endfor %}
+                                </select>
+                                <div class="row g-2">
+                                    <div class="col">
+                                        <input type="number" class="form-control" name="weight[]" placeholder="Weight" value="0" required>
+                                    </div>
+                                    <div class="col">
+                                        <input type="number" class="form-control" name="reps[]" placeholder="Repetitions" value="10" required>
+                                    </div>
+                                    <div class="col">
+                                        <input type="number" class="form-control" name="sets[]" placeholder="Sets" value="3" required>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
                 </div>
-                <br>
-                <div id="exerciseSets">
-                    <div class="exercise-set">
-                        <select name="exercise[]" class="form-select" required>
-                            <option selected disabled value="">Select an exercise</option>
-                            {% for exercise in exercises %}
-                                <option value="{{ exercise.id }}">{{ exercise.name }}</option>
-                            {% endfor %}
-                        </select>
-                        Weight: <input type="number" class="form-control" name="weight[]" placeholder="Weight" value = "0" required>
-                        Repetitions:<input type="number" class="form-control" name="reps[]" placeholder="Repetitions" value = "10" required>
-                        Sets:<input type="number" class="form-control" name="sets[]" placeholder="Sets" value="3" required>
-                        <br>
-                    </div>
+                <div class="card-footer text-end">
+                    <button type="button" id="addExercise" class="btn btn-primary me-2">Add Exercise</button>
+                    <button type="button" class="btn btn-danger me-2 remove-exercise-set">Remove Exercise</button>
+                    <button type="submit" form="workout" class="btn btn-success">Create Workout</button>
                 </div>
-
-            </form>
-            <button type="button" id="addExercise" class="btn btn-primary">Add Exercise</button>
-            <button type="button" class="btn btn-danger remove-exercise-set">Remove</button>
-            <br>
+            </div>
         </div>
     </div>
 </div>

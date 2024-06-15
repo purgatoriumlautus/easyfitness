@@ -1,22 +1,37 @@
 from application import db, login_manager
 from flask_login import UserMixin
-
+from sqlalchemy.ext.hybrid import hybrid_property
+from datetime import datetime
 
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(int(user_id))
 
 
+favorite_workouts_users = db.Table('favorite_workouts_users',
+    db.Column('user_id', db.Integer, db.ForeignKey('user.id')),  
+    db.Column('workout_id', db.Integer, db.ForeignKey('workout.id')) 
+)
 
 
 class Workout(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(20))
     exercisesets = db.relationship('ExerciseSet', backref='workout', lazy=True)
-    creator_id = db.Column(db.Integer, db.ForeignKey('user.id'))  # Declare as a foreign key
-    creator = db.relationship('User', backref='created_by_users', lazy=True)
+    creator_id = db.Column(db.Integer, db.ForeignKey('user.id')) 
+    creator = db.relationship('User', backref='created_workouts', lazy=True)
+    likes = db.Column(db.Integer, default = 0)
+    dislikes = db.Column(db.Integer,default = 0)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+  
+    @hybrid_property
+    def duration(self):
+        return sum(exerciseset.sets for exerciseset in self.exercisesets) * 3
 
-
+class UserReaction(db.Model):
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), primary_key=True)
+    workout_id = db.Column(db.Integer, db.ForeignKey('workout.id'), primary_key=True)
+    reaction = db.Column(db.String(10))
 
 class CompletedWorkout(db.Model):
     id = id = db.Column(db.Integer, primary_key=True)
@@ -44,10 +59,9 @@ class User(UserMixin, db.Model):
     weight = db.Column(db.Numeric(precision=1, asdecimal=False, decimal_return_scale=None))
     height = db.Column(db.Numeric(precision=2, asdecimal=False, decimal_return_scale=None))
     password = db.Column(db.String(80))
-    created_workouts = db.relationship('Workout', secondary=workouts_users, backref=db.backref('users', lazy='dynamic'))
+
     completed_workouts = db.relationship('CompletedWorkout', secondary=completed_workouts_users, backref=db.backref('users', lazy='dynamic'))
-
-
+    favorite_workouts = db.relationship('Workout', secondary=favorite_workouts_users, backref=db.backref('favorited_by', lazy='dynamic'))
     
 
 

@@ -1,20 +1,12 @@
 {% extends 'base.html' %}
-{% block title %}ALL WORKOUTS Profile{% endblock %}
+{% block title %}{{ current_user.username }}'s workouts{% endblock %}
 {% block content %}
-
-<div class="d-flex justify-content-between">
-    <a href="{{ url_for('create_workout') }}" class="btn btn-primary p-2 mb-2" style="font-size: 15px; border-radius: 20px;">Create a Workout</a>
-    <select id="sort-order" class="form-select" style="width: auto; margin-left: auto; margin-bottom:auto;">
-        <option value="newest">Newest to Oldest</option>
-        <option value="oldest">Oldest to Newest</option>
-        <option value="likes">Most Likes</option>
-    </select>
-</div>
-<div class="row">
-    {% for workout in workouts %}
-        <div class="col-md-4">
+    <h2>My Workouts</h2>
+    <div class="row">
+        {% for workout in current_user.created_workouts %}
+        <div class="col">
             <a href="{{ url_for('workout', workout_id=workout.id) }}">
-            <div class="card fixed-card">
+            <div class="card fixed-card" style="margin: 25px;">
                 <img src="{{ url_for('static', filename='images/workoutlogo.png') }}" class="small-image" alt="Image description">
                 <div class="card-body">
                     <h5 class="card-title"><b>{{ workout.name }}</b></h5>
@@ -34,21 +26,16 @@
                     {% else %}
                         <p class="card-text">Average weight: {{ average_weight }}</p>
                     {% endif %}
-                    <p class="card-text">Likes: {{ workout.likes }}</p>
-                    <p class="card-text">Dislikes: {{ workout.dislikes }}</p>
-                </div>
+                <p class="card-text">Likes: {{ workout.likes }}</p>
+                <p class="card-text">Dislikes: {{ workout.dislikes }}</p>
+                <form method="POST" action="{{ url_for('delete_workout', workout_id=workout.id) }}">
+                    <button type="submit" class="btn btn-danger">Delete</button>
+                </form>
             </div>
-            </a>
         </div>
+        </a>
+    </div>
     {% endfor %}
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script>
-    $(document).ready(function() {
-        $('#sort-order').change(function() {
-            var sort_order = $(this).val();
-            window.location.href = "{{ url_for('all_workouts') }}?sort=" + sort_order;
-        });
-    });
-    </script>
-</div>
+    </div>
 {% endblock %}
+

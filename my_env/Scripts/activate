@@ -35,7 +35,7 @@ deactivate () {
 # unset irrelevant variables
 deactivate nondestructive
 
-VIRTUAL_ENV="C:\Users\anennui\Desktop\workout_tracker\my_env"
+VIRTUAL_ENV="C:\Users\anennui\Desktop\easyfitness\my_env"
 export VIRTUAL_ENV
 
 _OLD_VIRTUAL_PATH="$PATH"
