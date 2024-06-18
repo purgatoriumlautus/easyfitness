@@ -15,56 +15,58 @@
                             <input type="text" class="form-control" name="name" placeholder="Enter workout name" required>
                         </div>
                         
-                        <div id="exerciseSets">
+                        <div id="exercise-sets">
                             <div class="exercise-set mb-3 border rounded p-3">
-                                <select name="exercise[]" class="form-select mb-2" required>
+                                <select name="exercise[]" class="form-select mb-2 exercise-select" required>
                                     <option selected disabled value="">Select an exercise</option>
                                     {% for exercise in exercises %}
                                     <option value="{{ exercise.id }}">{{ exercise.name }}</option>
                                     {% endfor %}
+                                    <option value="other">Other (+)</option>
                                 </select>
+                                <input type="text" class="form-control new-exercise-input" name="new_exercise_0" placeholder="Enter new exercise name" style="display: none;">
                                 <div class="row g-2">
                                     <div class="col">
-                                        <input type="number" class="form-control" name="weight[]" placeholder="Weight" value="0" required>
+                                        <input type="number" class="form-control" name="reps[]" placeholder="Repetitions" value="" required>
                                     </div>
                                     <div class="col">
-                                        <input type="number" class="form-control" name="reps[]" placeholder="Repetitions" value="10" required>
-                                    </div>
-                                    <div class="col">
-                                        <input type="number" class="form-control" name="sets[]" placeholder="Sets" value="3" required>
+                                        <input type="number" class="form-control" name="sets[]" placeholder="Sets" value="" required>
                                     </div>
                                 </div>
                             </div>
                         </div>
+                    
+                        <button type="button" class="btn btn-primary me-2" id="addExercise">Add Exercise</button>
+                        <button type="submit" class="btn btn-success">Create Workout</button>
                     </form>
-                </div>
-                <div class="card-footer text-end">
-                    <button type="button" id="addExercise" class="btn btn-primary me-2">Add Exercise</button>
-                    <button type="button" class="btn btn-danger me-2 remove-exercise-set">Remove Exercise</button>
-                    <button type="submit" form="workout" class="btn btn-success">Create Workout</button>
                 </div>
             </div>
         </div>
     </div>
 </div>
 <script>
-    document.getElementById('addExercise').addEventListener('click', function() {
-        var exerciseSet = document.querySelector('.exercise-set').cloneNode(true);
-        document.getElementById('workout').appendChild(exerciseSet);
-    });
-
     document.addEventListener('DOMContentLoaded', function() {
-   
-        var removeButton = document.querySelector('.remove-exercise-set');
+        var exerciseCount = 1;  // Start with 1 exercise set
 
-   
-        removeButton.addEventListener('click', function() {
-   
-            var exerciseSets = document.querySelectorAll('.exercise-set');
+        document.getElementById('addExercise').addEventListener('click', function() {
+            var exerciseSet = document.querySelector('.exercise-set').cloneNode(true);
+            var newExerciseInput = exerciseSet.querySelector('.new-exercise-input');
+            var newExerciseName = `new_exercise_${exerciseCount}`;
+            newExerciseInput.setAttribute('name', newExerciseName);
+            newExerciseInput.setAttribute('placeholder', 'Enter new exercise name');
+            newExerciseInput.style.display = 'none';  
+            document.getElementById('exercise-sets').appendChild(exerciseSet);
+            exerciseCount++;
+        });
 
-          
-            if (exerciseSets.length > 1) {
-                exerciseSets[exerciseSets.length - 1].remove();
+        document.getElementById('exercise-sets').addEventListener('change', function(event) {
+            if (event.target.classList.contains('exercise-select')) {
+                var newExerciseInput = event.target.nextElementSibling;
+                if (event.target.value == 'other') {
+                    newExerciseInput.style.display = 'block';
+                } else {
+                    newExerciseInput.style.display = 'none';
+                }
             }
         });
     });

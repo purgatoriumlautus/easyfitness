@@ -62,13 +62,13 @@ class User(UserMixin, db.Model):
 
     completed_workouts = db.relationship('CompletedWorkout', secondary=completed_workouts_users, backref=db.backref('users', lazy='dynamic'))
     favorite_workouts = db.relationship('Workout', secondary=favorite_workouts_users, backref=db.backref('favorited_by', lazy='dynamic'))
-    
+    created_exercises = db.relationship('Exerciselist', backref='creator', lazy=True)
 
 
 class Exerciselist(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(50))
-
+    creator_id = db.Column(db.Integer, db.ForeignKey('user.id')) 
 
 class ExerciseSet(db.Model):
     id = db.Column(db.Integer, primary_key=True)

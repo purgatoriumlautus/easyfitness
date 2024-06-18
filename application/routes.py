@@ -100,6 +100,11 @@ def all_workouts():
         workouts = Workout.query.order_by(Workout.likes.desc()).all()
     else:
         workouts = Workout.query.all()  
+    
+    for workout in workouts:
+        if workout.creator is None:
+            workout.creator_id = 1
+            db.session.commit()
 
     return render_template('workouts.html', workouts=workouts)
 
@@ -149,7 +154,10 @@ def delete_workout(workout_id):
     flash("Workout deleted successfully.", category="success")
     return redirect(url_for('created_workouts'))
 
-@app.route("/workouts/<int:workout_id>", methods=["GET","POST"])
+
+
+
+@app.route("/workouts/<int:workout_id>", methods=["GET", "POST"])
 @login_required
 def workout(workout_id):
     workout = Workout.query.filter_by(id=workout_id).first()
@@ -157,7 +165,16 @@ def workout(workout_id):
     if workout is None:
         flash("Workout not found!", category="danger")
         return redirect(url_for('all_workouts'))
+    
+    exercise_sets = ExerciseSet.query.filter_by(workout_id=workout.id).all()
+    print("Exercise Sets:", exercise_sets)  # Check if exercise_sets contains data
+    workout.exercisesets = exercise_sets
+    
+    print("Workout:", workout)  # Check if workout object is correctly fetched
+    
     return render_template('workout.html', workout=workout)
+
+
 
 
 @app.route("/workouts/<int:workout_id>/edit", methods=["GET","POST"])
@@ -240,36 +257,57 @@ def dislike_workout(workout_id):
         db.session.commit()
     return redirect(url_for('workout', workout_id=workout_id))
 
+
+
+
 @app.route('/create_workout', methods=['POST', 'GET'])
 @login_required
 def create_workout():
+    exercises = Exerciselist.query.filter_by(creator_id=None).all()
+    
     if request.method == 'POST':
         name = request.form["name"]
-        
         exercise_ids = request.form.getlist('exercise[]')
-        weights = request.form.getlist('weight[]')
         reps = request.form.getlist('reps[]')
         sets = request.form.getlist('sets[]')
 
-        exercises = list(zip(exercise_ids, weights, reps, sets))
-  
-        workout = Workout(name=name,creator_id = current_user.id )
+        workout = Workout(name=name, creator_id=current_user.id)
         db.session.add(workout)
         db.session.commit()
 
-        for exercise in exercises:
-            exerciseset = ExerciseSet(workout_id=workout.id, exercise_id=exercise[0], weight=exercise[1], reps=exercise[2], sets=exercise[3])
-            workout.exercisesets.append(exerciseset)
-        
-        
+        for i, exercise_id in enumerate(exercise_ids):
+            if exercise_id == 'other':
+                new_exercise_name = request.form.get(f'new_exercise_{i}')
+                if new_exercise_name:
+                    new_exercise = Exerciselist(name=new_exercise_name, creator_id=current_user.id)
+                    db.session.add(new_exercise)
+                    db.session.flush()
+                    exercise_id = new_exercise.id
+
+            try:
+                rep = int(reps[i])
+                set_count = int(sets[i])
+            except ValueError:
+                flash(f"Invalid input for reps or sets: {reps[i]}, {sets[i]}", category="error")
+                return redirect(url_for('create_workout'))
+
+            exerciseset = ExerciseSet(
+                workout_id=workout.id,
+                exercise_id=int(exercise_id),
+                reps=rep,
+                sets=set_count
+            )
+            db.session.add(exerciseset)
+
         db.session.commit()
-        
 
         flash("Workout Added!", category="success")
         return redirect(url_for('all_workouts'))
 
-    exercises = Exerciselist.query.all()
     return render_template('create_workout.html', exercises=exercises)
+
+
+
 
 
 
