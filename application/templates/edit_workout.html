@@ -19,16 +19,17 @@
                         <div id="exerciseSets">
                             {% for exercise_set in workout.exercisesets %}
                             <div class="exercise-set mb-3 border rounded p-3">
-                                <select name="exercise[]" class="form-select mb-2" required>
-                                    <option selected disabled value="">Select an exercise</option>
-                                    {% for exercise in exercises %}
-                                        <option value="{{ exercise.id }}" {% if exercise.id == exercise_set.exercise.id %}selected{% endif %}>{{ exercise.name }}</option>
-                                    {% endfor %}
-                                </select>
                                 <div class="row">
                                     <div class="col">
-                                        <label class="form-label">Weight</label>
-                                        <input type="number" class="form-control" name="weight[]" value="{{ exercise_set.weight }}" required>
+                                        <label class="form-label">Exercise</label>
+                                        <select name="exercise[]" class="form-select mb-2" required>
+                                            <option selected disabled value="">Select an exercise</option>
+                                            {% for exercise in exercises %}
+                                                <option value="{{ exercise.id }}" {% if exercise.id == exercise_set.exercise.id %}selected{% endif %}>{{ exercise.name }}</option>
+                                            {% endfor %}
+                                            <option value="other">Other(+)</option>
+                                        </select>
+                                        <input type="text" class="form-control mt-2 new-exercise-name" name="new_exercise[]" placeholder="New Exercise Name" style="display: none;">
                                     </div>
                                     <div class="col">
                                         <label class="form-label">Repetitions</label>
@@ -57,6 +58,10 @@
 <script>
     document.getElementById('addExercise').addEventListener('click', function() {
         var exerciseSet = document.querySelector('.exercise-set').cloneNode(true);
+        exerciseSet.querySelector('[name="exercise[]"]').value = '';
+        exerciseSet.querySelector('[name="reps[]"]').value = '';
+        exerciseSet.querySelector('[name="sets[]"]').value = '';
+        exerciseSet.querySelector('.new-exercise-name').style.display = 'none';
         document.getElementById('exerciseSets').appendChild(exerciseSet);
 
         // Add event listener to the new "Remove Exercise" button
@@ -68,10 +73,21 @@
                 this.parentElement.remove();
             }
         });
+
+        // Add event listener to the new exercise dropdown
+        exerciseSet.querySelector('[name="exercise[]"]').addEventListener('change', function() {
+            var newExerciseInput = this.parentElement.querySelector('.new-exercise-name');
+            if (this.value === 'other') {
+                newExerciseInput.style.display = 'block';
+            } else {
+                newExerciseInput.style.display = 'none';
+            }
+        });
     });
 
     document.addEventListener('DOMContentLoaded', function() {
         var removeButtons = document.querySelectorAll('.remove-exercise');
+        var exerciseDropdowns = document.querySelectorAll('[name="exercise[]"]');
 
         removeButtons.forEach(function(removeButton) {
             removeButton.addEventListener('click', function() {
@@ -79,6 +95,17 @@
 
                 if (exerciseSets.length > 1) {
                     this.parentElement.remove();
+                }
+            });
+        });
+
+        exerciseDropdowns.forEach(function(dropdown) {
+            dropdown.addEventListener('change', function() {
+                var newExerciseInput = this.parentElement.querySelector('.new-exercise-name');
+                if (this.value === 'other') {
+                    newExerciseInput.style.display = 'block';
+                } else {
+                    newExerciseInput.style.display = 'none';
                 }
             });
         });

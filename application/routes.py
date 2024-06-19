@@ -4,21 +4,12 @@ from flask import render_template, redirect, url_for, flash, request,session,abo
 from flask_login import login_user,logout_user, login_required, current_user
 from werkzeug.security import check_password_hash
 from datetime import datetime
-from .models import User, Exerciselist, Workout, ExerciseSet,UserReaction
-
+from .models import User, Exerciselist, Workout, ExerciseSet,UserReaction,CompletedWorkout,CompletedExerciseSet
 
 
 @app.route('/')
 def index():
     return render_template('index.html')
-
-
-
-@app.route('/workout_log')
-@login_required
-def workout_log():
-    # workouts = Workout.query.filter_by(user_id=current_user.id).order_by(Workout.date.desc()).all()
-    return render_template('workout_log.html') #workouts=workouts)
 
 
 
@@ -86,7 +77,7 @@ def favorite_workouts():
 
     return render_template('favorite.html', workouts=current_user.favorite_workouts)
     
-@app.route("/favorite/", methods=["GET", "POST"])
+
 
 @app.route("/workouts",methods = ["GET","POST"])
 @login_required
@@ -176,47 +167,53 @@ def workout(workout_id):
 
 
 
-
 @app.route("/workouts/<int:workout_id>/edit", methods=["GET","POST"])
 @login_required
 def edit_workout(workout_id):
     workout = Workout.query.get(workout_id)
-    exercises = Exerciselist.query.all()
+    exercises = Exerciselist.query.filter(
+        (Exerciselist.creator_id == None) | (Exerciselist.creator_id == current_user.id)
+    ).order_by(Exerciselist.name).all()
     
     if workout is None or workout.creator != current_user:
         flash("Unauthorized action.", category="danger")
         return redirect(url_for('all_workouts'))
 
     if request.method == 'POST':
-   
         name = request.form.get('name')
-        weights = request.form.getlist('weight[]')
+        exercise_ids = request.form.getlist('exercise[]')
+        new_exercise_names = request.form.getlist('new_exercise[]')
         reps = request.form.getlist('reps[]')
         sets = request.form.getlist('sets[]')
 
-
-        workout.name = name        
-        for i in range(len(weights)):
+        workout.name = name
+        for i in range(len(exercise_ids)):
+            if exercise_ids[i] == 'other' and new_exercise_names[i].strip():
+                new_exercise = Exerciselist(name=new_exercise_names[i].strip(), creator_id=current_user.id)
+                db.session.add(new_exercise)
+                db.session.flush()  # Ensure the new exercise has an ID
+                exercise_id = new_exercise.id
+            else:
+                exercise_id = exercise_ids[i]
+            
             if i < len(workout.exercisesets):
                 exercise_set = workout.exercisesets[i]
-                exercise_set.weight = weights[i]
+                exercise_set.exercise_id = exercise_id
                 exercise_set.reps = reps[i]
                 exercise_set.sets = sets[i]
             else:
-        
-                exercise_set = ExerciseSet(weight=weights[i], reps=reps[i], sets=sets[i])
+                exercise_set = ExerciseSet(workout_id=workout.id, exercise_id=exercise_id, reps=reps[i], sets=sets[i])
                 workout.exercisesets.append(exercise_set)
 
-     
-        while len(workout.exercisesets) > len(weights):
+        while len(workout.exercisesets) > len(exercise_ids):
             workout.exercisesets.pop()
-
 
         db.session.commit()
 
         flash("Workout updated successfully.", category="success")
         return redirect(url_for('all_workouts'))
     return render_template('edit_workout.html', workout=workout, exercises=exercises)
+
 
 
 @app.route('/workouts/<int:workout_id>/like', methods=['POST'])
@@ -332,6 +329,90 @@ def profile():
     user = User.query.filter_by(username=current_user.username).first()
     return render_template('myprofile.html', user=user)
 
+
+
+
+@app.route('/workout_history', methods=['GET'])
+@login_required
+def workout_history():
+    completed_workouts = CompletedWorkout.query.filter_by(user_id=current_user.id).all()
+    return render_template('workout_history.html', completed_workouts=completed_workouts)
+
+
+
+@app.route("/workout_history_add", methods=["GET", "POST"])
+@login_required
+def add_completed_workout():
+    workouts = Workout.query.filter(
+        (Workout.creator_id == current_user.id) | 
+        (Workout.id.in_([w.id for w in current_user.favorite_workouts]))
+    ).all()
+    
+    selected_workout = None
+    
+    if request.method == "POST":
+        workout_id = request.form.get("workout_id")
+        selected_workout = Workout.query.get(workout_id)
+        
+        if not selected_workout:
+            flash("Invalid workout selected.", "danger")
+            return redirect(url_for("add_completed_workout"))
+
+    return render_template("add_completed_workout.html", workouts=workouts, selected_workout=selected_workout)
+
+
+@app.route('/save_completed_workout', methods=['POST'])
+@login_required
+def save_completed_workout():
+    workout_id = request.form.get('workout_id')
+    workout = Workout.query.get(workout_id)
+    
+    if not workout:
+        flash("Invalid workout selected.", "danger")
+        return redirect(url_for('add_completed_workout'))
+    
+    total_sets = 0
+    exercise_logs = []
+
+    # Collect data from the form and create CompletedExerciseSet instances
+    for exercise_set in workout.exercisesets:
+        exercise_id = exercise_set.exercise.id
+        weight = request.form.get(f'weight_{exercise_id}')
+        sets = request.form.get(f'sets_{exercise_id}')
+        reps = request.form.get(f'reps_{exercise_id}')
+
+        if sets is None or reps is None:
+            flash("Please fill out all fields for sets and reps.", "danger")
+            return redirect(url_for('add_completed_workout'))
+        
+        total_sets += int(sets)
+        exercise_logs.append(
+            CompletedExerciseSet(
+                exercise_id=exercise_id,
+                weight=weight if weight else None,  # Handle optional weight
+                sets=sets,
+                reps=reps
+            )
+        )
+    
+    # Create a new CompletedWorkout instance
+    completed_workout = CompletedWorkout(
+        user_id=current_user.id,
+        workout_id=workout_id,
+        total_sets=total_sets
+    )
+    db.session.add(completed_workout)
+    db.session.commit()  # Commit to get the ID of the completed_workout
+
+    # Associate each CompletedExerciseSet with the completed_workout
+    for log in exercise_logs:
+        log.completed_workout_id = completed_workout.id
+        db.session.add(log)
+    
+    db.session.commit()
+    
+    flash("Completed workout logged successfully!", "success")
+    return redirect(url_for('workout_history'))
 
 
 

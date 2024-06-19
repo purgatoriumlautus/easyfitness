@@ -25,7 +25,7 @@
                              
                                 {% if current_user.is_authenticated %}
                                 <li class="scroll-to-section"><a href="{{ url_for('all_workouts') }}">Workouts</a></li>
-                                <li class="scroll-to-section"><a href="{{ url_for('workout_log') }}">Workout History</a></li>
+                                <li class="scroll-to-section"><a href="{{ url_for('workout_history') }}">Workout History</a></li>
                                 <li class="scroll-to-section"><a href="{{ url_for('profile') }}">My profile</a></li>
                                 <li class="main-button"><a href="{{ url_for('logout') }}">Logout</a></li>
                                  

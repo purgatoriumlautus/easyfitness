@@ -1,5 +1,9 @@
+from flask_migrate import Migrate
 from application import app, db
 from application.models import User, Workout, ExerciseSet, Exerciselist
+
+migrate = Migrate(app, db)
+
 
 with app.app_context():
     db.create_all()

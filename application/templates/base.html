@@ -23,7 +23,7 @@
                             <li class="scroll-to-section"><a href="{{ url_for('index') }}" class="active">Home</a></li>
                             {% if current_user.is_authenticated %}
                             <li class="scroll-to-section"><a href="{{ url_for('all_workouts') }}">Workouts</a></li>
-                            <li class="scroll-to-section"><a href="{{ url_for('workout_log') }}">Workout history</a></li>
+                            <li class="scroll-to-section"><a href="{{ url_for('workout_history') }}">Workout history</a></li>
                             <li class="scroll-to-section"><a href="{{ url_for('profile') }}">My profile</a></li>
                             <li class="main-button"><a href="{{ url_for('logout') }}">Logout</a></li> 
                             {% endif %}

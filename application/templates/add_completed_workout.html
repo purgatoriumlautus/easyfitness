@@ -1,0 +1,54 @@
+{% extends 'base.html' %}
+{% block title %}Add Completed Workout{% endblock %}
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <h1 class="text-center">Add Completed Workout</h1>
+            <form method="POST" action="{{ url_for('add_completed_workout') }}">
+                <div class="form-group">
+                    <label for="workout">Select Workout</label>
+                    <select id="workout" name="workout_id" class="form-control" required onchange="this.form.submit()">
+                        <option value="" disabled {% if not selected_workout %}selected{% endif %}>Select a workout</option>
+                        {% for workout in workouts %}
+                            <option value="{{ workout.id }}" {% if selected_workout and workout.id == selected_workout.id %}selected{% endif %}>{{ workout.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </form>
+            {% if selected_workout %}
+            <form method="POST" action="{{ url_for('save_completed_workout') }}">
+                <input type="hidden" name="workout_id" value="{{ selected_workout.id }}">
+                <div id="workoutDetails">
+                    <h3 class="text-center">Workout Details</h3>
+                    <div id="workoutCard" class="card mb-3">
+                        <div class="card-body">
+                            <h5 class="card-title">{{ selected_workout.name }}</h5>
+                            <ul id="exerciseList" class="list-group list-group-flush">
+                                {% for exercise_set in selected_workout.exercisesets %}
+                                <li class="list-group-item">
+                                    <div class="form-group row">
+                                        <label class="col-sm-3 col-form-label"><strong>{{ exercise_set.exercise.name }}</strong></label>
+                                        <div class="col-sm-3">
+                                            <input type="number" name="weight_{{ exercise_set.exercise.id }}" class="form-control" placeholder="Weight" value="{{ exercise_set.weight }}">
+                                        </div>
+                                        <div class="col-sm-3">
+                                            <input type="number" name="sets_{{ exercise_set.exercise.id }}" class="form-control" placeholder="Sets" value="{{ exercise_set.sets }}" required>
+                                        </div>
+                                        <div class="col-sm-3">
+                                            <input type="number" name="reps_{{ exercise_set.exercise.id }}" class="form-control" placeholder="Reps" value="{{ exercise_set.reps }}" required>
+                                        </div>
+                                    </div>
+                                </li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary mt-3">Save</button>
+            </form>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
