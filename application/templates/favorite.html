@@ -14,18 +14,10 @@
                     <p class="card-text">Number of exercises: {{ workout.exercisesets|length }}</p>
                     {% set total_sets = namespace(value=0) %}
                     {% set total_weight = namespace(value=0) %}
-                    {% for exercise_set in workout.exercisesets %}
-                        {% set total_sets.value = total_sets.value + exercise_set.sets %}
-                        {% set total_weight.value = total_weight.value + exercise_set.weight %}
-                    {% endfor %}
+            
                     <p class="card-text">Total sets: {{ total_sets.value }}</p>
                  
-                    {% set average_weight = (total_weight.value / workout.exercisesets|length) if workout.exercisesets|length > 0 else 0 %}
-                    {% if average_weight == 0 %}
-                        <p class="card-text"><b>Bodyweight</b></p>
-                    {% else %}
-                        <p class="card-text">Average weight: {{ average_weight }}</p>
-                    {% endif %}
+                  
                 <p class="card-text">Likes: {{ workout.likes }}</p>
                 <p class="card-text">Dislikes: {{ workout.dislikes }}</p>
                 <form action="{{ url_for('favorite_workout', workout_id=workout.id) }}" method="post">

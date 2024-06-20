@@ -3,11 +3,13 @@ from flask_login import UserMixin
 from sqlalchemy.ext.hybrid import hybrid_property
 from datetime import datetime
 
+
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(int(user_id))
 
 
+#reletate users to their fav. workouts 
 favorite_workouts_users = db.Table('favorite_workouts_users',
     db.Column('user_id', db.Integer, db.ForeignKey('user.id')),  
     db.Column('workout_id', db.Integer, db.ForeignKey('workout.id')) 
@@ -22,24 +24,26 @@ class Workout(db.Model):
     creator = db.relationship('User', backref='created_workouts', lazy=True)
     likes = db.Column(db.Integer, default = 0)
     dislikes = db.Column(db.Integer,default = 0)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-  
+    created_at = db.Column(db.DateTime, default=datetime.utcnow) #time the object was created
+    privacy = db.Column(db.String(10), default='private')  # Add this line
+
+    #calculate the approximate duration for each workout(taking each set to take 3min)
     @hybrid_property
     def duration(self):
         return sum(exerciseset.sets for exerciseset in self.exercisesets) * 3
 
+
+#likes dislikes
 class UserReaction(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), primary_key=True)
     workout_id = db.Column(db.Integer, db.ForeignKey('workout.id'), primary_key=True)
     reaction = db.Column(db.String(10))
 
 
-
 workouts_users = db.Table('workouts_users',
     db.Column('user_id', db.Integer, db.ForeignKey('user.id')),  
     db.Column('workout_id', db.Integer, db.ForeignKey('workout.id')) 
 )
-
 
 
 
@@ -59,6 +63,7 @@ class Exerciselist(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(50))
     creator_id = db.Column(db.Integer, db.ForeignKey('user.id')) 
+
 
 class ExerciseSet(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -80,6 +85,7 @@ class CompletedWorkout(db.Model):
 
     user = db.relationship('User', backref='completed_workouts')
     workout = db.relationship('Workout', backref='completed_workouts')
+
 
 class CompletedExerciseSet(db.Model):
     id = db.Column(db.Integer, primary_key=True)

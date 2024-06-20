@@ -5,9 +5,9 @@
 <div class="d-flex justify-content-between">
     <a href="{{ url_for('create_workout') }}" class="btn btn-primary p-2 mb-2" style="font-size: 15px; border-radius: 20px;">Create a Workout</a>
     <select id="sort-order" class="form-select" style="width: auto; margin-left: auto; margin-bottom:auto;">
-        <option value="newest">Newest to Oldest</option>
-        <option value="oldest">Oldest to Newest</option>
-        <option value="likes">Most Likes</option>
+        <option value="newest" {% if request.args.get('sort') == 'newest' %}selected{% endif %}>Newest to Oldest</option>
+        <option value="oldest" {% if request.args.get('sort') == 'oldest' %}selected{% endif %}>Oldest to Newest</option>
+        <option value="likes" {% if request.args.get('sort') == 'likes' %}selected{% endif %}>Most Likes</option>
     </select>
 </div>
 <div class="row">
@@ -18,19 +18,13 @@
                 <img src="{{ url_for('static', filename='images/workoutlogo.png') }}" class="small-image" alt="Image description">
                 <div class="card-body">
                     <h5 class="card-title"><b>{{ workout.name }}</b></h5>
-        
                     <p class="card-text" style="{{ 'color: green; font-weight: bold; font-size: 15px;' if workout.creator.username == 'EasyFitness' else '' }}">Created by: {{ workout.creator.username }}</p>
-                   
                     <p class="card-text">Number of exercises: {{ workout.exercisesets|length }}</p>
                     {% set total_sets = namespace(value=0) %}
-                   
                     {% for exercise_set in workout.exercisesets %}
                         {% set total_sets.value = total_sets.value + exercise_set.sets %}
-                        
                     {% endfor %}
                     <p class="card-text">Total sets: {{ total_sets.value }}</p>
-                 
-                
                     <p class="card-text">Likes: {{ workout.likes }}</p>
                     <p class="card-text">Dislikes: {{ workout.dislikes }}</p>
                 </div>
@@ -38,6 +32,8 @@
             </a>
         </div>
     {% endfor %}
+</div>
+
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
     $(document).ready(function() {
@@ -46,6 +42,5 @@
             window.location.href = "{{ url_for('all_workouts') }}?sort=" + sort_order;
         });
     });
-    </script>
-</div>
+</script>
 {% endblock %}

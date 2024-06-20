@@ -39,9 +39,60 @@
                                             <input type="number" name="reps_{{ exercise_set.exercise.id }}" class="form-control" placeholder="Reps" value="{{ exercise_set.reps }}" required>
                                         </div>
                                     </div>
+                                    <div class="form-group row">
+                                        <div class="col-sm-12 text-right">
+                                            <button type="button" class="btn btn-danger btn-sm remove-exercise" data-exercise-id="{{ exercise_set.exercise.id }}">Delete</button>
+                                            <input type="hidden" name="delete_exercise_{{ exercise_set.exercise.id }}" value="false">
+                                        </div>
+                                    </div>
                                 </li>
                                 {% endfor %}
                             </ul>
+                            <div id="newExercisesList">
+                                {% if new_exercises %}
+                                {% for new_exercise in new_exercises %}
+                                <li class="list-group-item">
+                                    <div class="form-group row">
+                                        <label class="col-sm-3 col-form-label"><strong>New Exercise</strong></label>
+                                        <div class="col-sm-9">
+                                            <select name="exercise_new_{{ loop.index }}" class="form-control" required>
+                                                {% for exercise in exercises %}
+                                                    <option value="{{ exercise.id }}" {% if exercise.id == new_exercise.exercise_id %}selected{% endif %}>{{ exercise.name }}</option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="form-group row">
+                                        <label class="col-sm-3 col-form-label"><strong>Weight</strong></label>
+                                        <div class="col-sm-3">
+                                            <input type="number" name="weight_new_{{ loop.index }}" class="form-control" placeholder="Weight" value="{{ new_exercise.weight }}">
+                                        </div>
+                                        <label class="col-sm-3 col-form-label"><strong>Sets</strong></label>
+                                        <div class="col-sm-3">
+                                            <input type="number" name="sets_new_{{ loop.index }}" class="form-control" placeholder="Sets" value="{{ new_exercise.sets }}" required>
+                                        </div>
+                                    </div>
+                                    <div class="form-group row">
+                                        <label class="col-sm-3 col-form-label"><strong>Reps</strong></label>
+                                        <div class="col-sm-9">
+                                            <input type="number" name="reps_new_{{ loop.index }}" class="form-control" placeholder="Reps" value="{{ new_exercise.reps }}" required>
+                                        </div>
+                                    </div>
+                                    <div class="form-group row">
+                                        <div class="col-sm-12 text-right">
+                                            <button type="button" class="btn btn-danger btn-sm remove-new-exercise" data-exercise-id="{{ loop.index }}">Delete</button>
+                                            <input type="hidden" name="delete_new_exercise_{{ loop.index }}" value="false">
+                                        </div>
+                                    </div>
+                                </li>
+                                {% endfor %}
+                                {% endif %}
+                            </div>
+                            <div class="form-group row mt-3">
+                                <div class="col-sm-12 text-center">
+                                    <button type="button" class="btn btn-success btn-sm" id="addExercise">Add Exercise</button>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -51,4 +102,66 @@
         </div>
     </div>
 </div>
+
+
+
+<script>
+    // script to add a new exercise when add exercise button is clicked
+document.getElementById('addExercise').addEventListener('click', function() {
+    var newExerciseId = 'new_' + Date.now();
+    var newExerciseItem = `
+        <li class="list-group-item">
+            <div class="form-group row">
+                <label class="col-sm-3 col-form-label"><strong>Exercise</strong></label>
+                <div class="col-sm-9">
+                    <select name="exercise_${newExerciseId}" class="form-control" required>
+                        {% for exercise in exercises %}
+                            <option value="{{ exercise.id }}">{{ exercise.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            <div class="form-group row">
+                <label class="col-sm-3 col-form-label"><strong>Weight</strong></label>
+                <div class="col-sm-3">
+                    <input type="number" name="weight_${newExerciseId}" class="form-control" placeholder="Weight">
+                </div>
+                <label class="col-sm-3 col-form-label"><strong>Sets</strong></label>
+                <div class="col-sm-3">
+                    <input type="number" name="sets_${newExerciseId}" class="form-control" placeholder="Sets" required>
+                </div>
+            </div>
+            <div class="form-group row">
+                <label class="col-sm-3 col-form-label"><strong>Reps</strong></label>
+                <div class="col-sm-9">
+                    <input type="number" name="reps_${newExerciseId}" class="form-control" placeholder="Reps" required>
+                </div>
+            </div>
+            <div class="form-group row">
+                <div class="col-sm-12 text-right">
+                    <button type="button" class="btn btn-danger btn-sm remove-exercise" data-exercise-id="${newExerciseId}">Delete</button>
+                    <input type="hidden" name="delete_exercise_${newExerciseId}" value="false">
+                </div>
+            </div>
+        </li>
+    `;
+    var exerciseList = document.getElementById('newExercisesList');
+    exerciseList.insertAdjacentHTML('beforeend', newExerciseItem);
+});
+//remove exercise button listener
+document.addEventListener('click', function(event) {
+    if (event.target.classList.contains('remove-exercise')) {
+        var exerciseId = event.target.getAttribute('data-exercise-id');
+        var exerciseItem = event.target.closest('.list-group-item');
+        exerciseItem.style.display = 'none';
+        document.querySelector(`input[name="delete_exercise_${exerciseId}"]`).value = 'true';
+    }
+    if (event.target.classList.contains('remove-new-exercise')) {
+        var exerciseId = event.target.getAttribute('data-exercise-id');
+        var exerciseItem = event.target.closest('.list-group-item');
+        exerciseItem.style.display = 'none';
+        document.querySelector(`input[name="delete_new_exercise_${exerciseId}"]`).value = 'true';
+    }
+});
+</script>
 {% endblock %}

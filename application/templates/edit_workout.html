@@ -4,79 +4,85 @@
 <div class="container mt-4">
     <div class="row justify-content-center">
         <div class="col-md-8">
-            <div class="card">
+            <div class="card shadow">
                 <div class="card-header bg-primary text-white">
                     <h3 class="card-title mb-0">Edit Workout</h3>
                 </div>
                 <div class="card-body">
                     <form method="POST" action="{{ url_for('edit_workout', workout_id=workout.id) }}" id="workout">
-                        <div class="form-group row">
-                            <label for="name" class="col-sm-2 col-form-label">Workout Name</label>
-                            <div class="col-sm-10">
-                                <input type="text" class="form-control" name="name" value="{{ workout.name }}" placeholder="Workout name" required>
-                            </div>
+                        <div class="mb-3">
+                            <label for="name" class="form-label">Workout Name</label>
+                            <input type="text" class="form-control" name="name" value="{{ workout.name }}" required>
                         </div>
-                        <div id="exerciseSets">
+                        <div class="mb-3">
+                            <label for="privacy" class="form-label">Privacy</label>
+                            <select class="form-select" name="privacy" required>
+                                <option value="public" {% if workout.privacy == 'public' %}selected{% endif %}>Public</option>
+                                <option value="private" {% if workout.privacy == 'private' %}selected{% endif %}>Private</option>
+                            </select>
+                        </div>
+                        <div id="exercise-sets">
                             {% for exercise_set in workout.exercisesets %}
                             <div class="exercise-set mb-3 border rounded p-3">
-                                <div class="row">
+                                <select name="exercise[]" class="form-select mb-2 exercise-select" required>
+                                    <option selected disabled value="">Select an exercise</option>
+                                    {% for exercise in exercises %}
+                                    <option value="{{ exercise.id }}" {% if exercise_set.exercise.id == exercise.id %}selected{% endif %}>{{ exercise.name }}</option>
+                                    {% endfor %}
+                                    <option value="other">Other (+)</option>
+                                </select>
+                                <input type="text" class="form-control new-exercise-input" name="new_exercise_{{ loop.index0 }}" placeholder="Enter new exercise name" style="display: none;">
+                                <div class="row g-2">
                                     <div class="col">
-                                        <label class="form-label">Exercise</label>
-                                        <select name="exercise[]" class="form-select mb-2" required>
-                                            <option selected disabled value="">Select an exercise</option>
-                                            {% for exercise in exercises %}
-                                                <option value="{{ exercise.id }}" {% if exercise.id == exercise_set.exercise.id %}selected{% endif %}>{{ exercise.name }}</option>
-                                            {% endfor %}
-                                            <option value="other">Other(+)</option>
-                                        </select>
-                                        <input type="text" class="form-control mt-2 new-exercise-name" name="new_exercise[]" placeholder="New Exercise Name" style="display: none;">
+                                        <input type="number" class="form-control" name="reps[]" placeholder="Repetitions" value="{{ exercise_set.reps }}" required>
                                     </div>
                                     <div class="col">
-                                        <label class="form-label">Repetitions</label>
-                                        <input type="number" class="form-control" name="reps[]" value="{{ exercise_set.reps }}" required>
-                                    </div>
-                                    <div class="col">
-                                        <label class="form-label">Sets</label>
-                                        <input type="number" class="form-control" name="sets[]" value="{{ exercise_set.sets }}" required>
+                                        <input type="number" class="form-control" name="sets[]" placeholder="Sets" value="{{ exercise_set.sets }}" required>
                                     </div>
                                 </div>
-                                <button type="button" class="btn btn-danger mt-2 remove-exercise">Remove Exercise</button>
-                                <hr>
                             </div>
                             {% endfor %}
                         </div>
+                        <button type="button" class="btn btn-primary me-2" id="addExercise">Add Exercise</button>
+                        <button type="submit" class="btn btn-success">Save Workout</button>
                     </form>
-                </div>
-                <div class="card-footer d-flex justify-content-between">
-                    <button type="button" id="addExercise" class="btn btn-primary">Add Exercise</button>
-                    <button type="submit" form="workout" class="btn btn-success">Save Changes</button>
                 </div>
             </div>
         </div>
     </div>
 </div>
 <script>
+    // ad exercvise button
     document.getElementById('addExercise').addEventListener('click', function() {
+        
+        // Clone an existing exercise set
         var exerciseSet = document.querySelector('.exercise-set').cloneNode(true);
+        
+        // clear values in the  exercise set
         exerciseSet.querySelector('[name="exercise[]"]').value = '';
         exerciseSet.querySelector('[name="reps[]"]').value = '';
         exerciseSet.querySelector('[name="sets[]"]').value = '';
         exerciseSet.querySelector('.new-exercise-name').style.display = 'none';
+        
+        // add cloned exercise set to the exercise sets container
         document.getElementById('exerciseSets').appendChild(exerciseSet);
 
-        // Add event listener to the new "Remove Exercise" button
+        //  listener to the remove Exercise button in the new set
         var removeButton = exerciseSet.querySelector('.remove-exercise');
         removeButton.addEventListener('click', function() {
             var exerciseSets = document.querySelectorAll('.exercise-set');
-
+            
+            // remove the exercise set if there is more than one
             if (exerciseSets.length > 1) {
                 this.parentElement.remove();
             }
         });
 
-        // Add event listener to the new exercise dropdown
+        // add event listener to the exercise dropdown in the new set
         exerciseSet.querySelector('[name="exercise[]"]').addEventListener('change', function() {
             var newExerciseInput = this.parentElement.querySelector('.new-exercise-name');
+            
+            //  new exercise input if 
             if (this.value === 'other') {
                 newExerciseInput.style.display = 'block';
             } else {
@@ -84,24 +90,28 @@
             }
         });
     });
-
+    
     document.addEventListener('DOMContentLoaded', function() {
+        // listeners to existing remove exercise buttons
         var removeButtons = document.querySelectorAll('.remove-exercise');
-        var exerciseDropdowns = document.querySelectorAll('[name="exercise[]"]');
-
         removeButtons.forEach(function(removeButton) {
             removeButton.addEventListener('click', function() {
                 var exerciseSets = document.querySelectorAll('.exercise-set');
-
+                
+                // remove the exercise set if there is more than one
                 if (exerciseSets.length > 1) {
                     this.parentElement.remove();
                 }
             });
         });
 
+        // listeners to existing exercise dropdowns
+        var exerciseDropdowns = document.querySelectorAll('[name="exercise[]"]');
         exerciseDropdowns.forEach(function(dropdown) {
             dropdown.addEventListener('change', function() {
                 var newExerciseInput = this.parentElement.querySelector('.new-exercise-name');
+                
+                // if other is selected
                 if (this.value === 'other') {
                     newExerciseInput.style.display = 'block';
                 } else {

@@ -3,21 +3,62 @@
 {% block content %}
 <div class="container mt-4">
     <div class="card shadow">
-        <div class="card-body">
+        <div class="card-body position-relative">
             <h1 class="card-title">{{ user.username }}'s Profile</h1>
-            <p class="card-text"><strong>First name:</strong> {{ user.firstname }}</p>
-            <p class="card-text"><strong>Last name:</strong> {{ user.lastname }}</p>
-            <p class="card-text"><strong>Height:</strong> {{ user.height }}</p>
-            <p class="card-text"><strong>Weight:</strong> {{ user.weight }}</p>
-            <div class="d-flex justify-content-center mt-3">
-                <a href="{{ url_for('favorite_workouts') }}" class="btn btn-primary me-2" style="border-radius: 20px;">
-                    Favourite Workouts
-                </a>
-                <a href="{{ url_for('created_workouts') }}" class="btn btn-primary" style="border-radius: 20px;">
-                    Created Workouts
-                </a>
+            <button class="btn btn-success position-absolute" style="top: 10px; right: 10px;" onclick="toggleEditMode()">Edit Profile</button>
+            <div id="profile-view">
+                <p class="card-text"><strong>First name:</strong> {{ user.firstname }}</p>
+                <p class="card-text"><strong>Last name:</strong> {{ user.lastname }}</p>
+                <p class="card-text"><strong>Height:</strong> {{ user.height }}</p>
+                <p class="card-text"><strong>Weight:</strong> {{ user.weight }}</p>
+                <div class="d-flex justify-content-center mt-3">
+                    <a href="{{ url_for('favorite_workouts') }}" class="btn btn-primary me-2" style="border-radius: 20px;">
+                        Favourite Workouts
+                    </a>
+                    <a href="{{ url_for('created_workouts') }}" class="btn btn-primary" style="border-radius: 20px;">
+                        Created Workouts
+                    </a>
+                </div>
             </div>
+            <form id="profile-edit" method="POST" action="{{ url_for('edit_profile') }}" style="display: none;">
+                <div class="form-group">
+                    <label for="firstname">First Name</label>
+                    <input type="text" class="form-control" id="firstname" name="firstname" value="{{ user.firstname }}" required>
+                </div>
+                <div class="form-group">
+                    <label for="lastname">Last Name</label>
+                    <input type="text" class="form-control" id="lastname" name="lastname" value="{{ user.lastname }}" required>
+                </div>
+                <div class="form-group">
+                    <label for="height">Height</label>
+                    <input type="number" step="0.01" class="form-control" id="height" name="height" value="{{ user.height }}" required min="80" max="230">
+                </div>
+                <div class="form-group">
+                    <label for="weight">Weight</label>
+                    <input type="number" step="0.01" class="form-control" id="weight" name="weight" value="{{ user.weight }}" min="30" max="300" required>
+                </div>
+                <div class="d-flex justify-content-center mt-3">
+                    <button type="submit" class="btn btn-success">Save</button>
+                    <button type="button" class="btn btn-secondary" onclick="toggleEditMode()">Cancel</button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
+
+
+<script>
+    //edit the profile toggle fields
+function toggleEditMode() {
+    var profileView = document.getElementById('profile-view');
+    var profileEdit = document.getElementById('profile-edit');
+    if (profileView.style.display === 'none') {
+        profileView.style.display = 'block';
+        profileEdit.style.display = 'none';
+    } else {
+        profileView.style.display = 'none';
+        profileEdit.style.display = 'block';
+    }
+}
+</script>
 {% endblock %}

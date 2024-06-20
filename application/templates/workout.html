@@ -10,7 +10,7 @@
                 <div id="notification" class="alert alert-success position-absolute top-0 start-50 translate-middle-x" style="display: none;"></div>
                 <div class="card-body">
                     <h5 class="card-title">Workout: <strong>{{ workout.name }}</strong></h5>
-                    <h6 class="card-subtitle mb-2 text-muted">Duration: {{ workout.duration }} min.</h6>
+                    <h6 class="card-subtitle mb-2 text-muted">Duration ~ {{ workout.duration }} min.</h6>
                     <h6 class="card-subtitle mb-2 text-muted">Created by: {{ workout.creator.username }}</h6>
                     
                     {% for exercise_set in workout.exercisesets %}

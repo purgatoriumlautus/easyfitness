@@ -25,7 +25,7 @@ def login():
             login_user(user)
             flash("Login Successful!", category="success")
             session['username'] = username
-            return redirect(url_for('workout_log'))
+            return redirect(url_for('workout_history'))
         
         else:
             flash("Invalid username or password! Please try again.", category="danger")
@@ -65,195 +65,24 @@ def register():
 
     return render_template('register.html')
 
-@app.route("/favorite", methods=["GET", "POST"])
-@login_required
-def favorite_workouts():
-    if request.method == "POST":
-        workout_id = request.form.get('workout_id')
-        workout = Workout.query.get(workout_id)
-        if workout in current_user.favorite_workouts:
-            current_user.favorite_workouts.remove(workout)
-            db.session.commit()
 
-    return render_template('favorite.html', workouts=current_user.favorite_workouts)
-    
-
-
-@app.route("/workouts",methods = ["GET","POST"])
+@app.route("/workouts", methods=["GET", "POST"])
 @login_required
 def all_workouts():
-    sort_order = request.args.get('sort', 'newest')  
-    if sort_order == 'newest': #does not work for some reason(
-        workouts = Workout.query.all()
+    sort_order = request.args.get('sort', 'newest')
+
+    base_query = Workout.query.filter_by(privacy='public')
+
+    if sort_order == 'newest':
+        workouts = base_query.order_by(Workout.created_at.desc()).all()
     elif sort_order == 'oldest':
-        workouts = Workout.query.order_by(Workout.created_at).all()
+        workouts = base_query.order_by(Workout.created_at).all()
     elif sort_order == 'likes':
-        workouts = Workout.query.order_by(Workout.likes.desc()).all()
+        workouts = base_query.order_by(Workout.likes.desc()).all()
     else:
-        workouts = Workout.query.all()  
-    
-    for workout in workouts:
-        if workout.creator is None:
-            workout.creator_id = 1
-            db.session.commit()
+        workouts = base_query.order_by(Workout.name.asc()).all()
 
     return render_template('workouts.html', workouts=workouts)
-
-@app.route('/workouts/<int:workout_id>/favorite', methods=['POST'])
-@login_required
-def favorite_workout(workout_id):
-    workout = Workout.query.get(workout_id)
-    if request.form.get('_method') == 'DELETE':
-        current_user.favorite_workouts.remove(workout)
-        db.session.commit()
-        flash("Workout unfavored successfully.", category="warning")
-        return redirect(url_for('favorite_workouts'))
-
-    if workout not in current_user.favorite_workouts:
-        current_user.favorite_workouts.append(workout)
-        flash("Workout favored successfully.", category="success")
-    else:
-        current_user.favorite_workouts.remove(workout)
-        flash("Workout unfavored successfully.", category="warning")
-    db.session.commit()
-    return redirect(url_for('workout', workout_id=workout_id))
-
-@app.route("/myworkouts",methods = ["GET","POST"])
-@login_required
-def created_workouts():
-    if request.form.get('_method') == 'DELETE':
-        current_user.favorite_workouts.remove(workout)
-        db.session.commit()
-        return redirect(url_for('favorite_workouts'))
-    print(current_user.created_workouts)  # Debug print statement
-    return render_template('myworkouts.html')
-
-
-@app.route("/workouts/<int:workout_id>/delete", methods=["POST"])
-@login_required
-def delete_workout(workout_id):
-    workout = Workout.query.get(workout_id)
-    
-    if workout is None or workout.creator != current_user:
-        flash("Unauthorized action.", category="danger")
-        return redirect(url_for('all_workouts'))
-
-    # Delete the workout
-    db.session.delete(workout)
-    db.session.commit()
-
-    flash("Workout deleted successfully.", category="success")
-    return redirect(url_for('created_workouts'))
-
-
-
-
-@app.route("/workouts/<int:workout_id>", methods=["GET", "POST"])
-@login_required
-def workout(workout_id):
-    workout = Workout.query.filter_by(id=workout_id).first()
-    
-    if workout is None:
-        flash("Workout not found!", category="danger")
-        return redirect(url_for('all_workouts'))
-    
-    exercise_sets = ExerciseSet.query.filter_by(workout_id=workout.id).all()
-    print("Exercise Sets:", exercise_sets)  # Check if exercise_sets contains data
-    workout.exercisesets = exercise_sets
-    
-    print("Workout:", workout)  # Check if workout object is correctly fetched
-    
-    return render_template('workout.html', workout=workout)
-
-
-
-@app.route("/workouts/<int:workout_id>/edit", methods=["GET","POST"])
-@login_required
-def edit_workout(workout_id):
-    workout = Workout.query.get(workout_id)
-    exercises = Exerciselist.query.filter(
-        (Exerciselist.creator_id == None) | (Exerciselist.creator_id == current_user.id)
-    ).order_by(Exerciselist.name).all()
-    
-    if workout is None or workout.creator != current_user:
-        flash("Unauthorized action.", category="danger")
-        return redirect(url_for('all_workouts'))
-
-    if request.method == 'POST':
-        name = request.form.get('name')
-        exercise_ids = request.form.getlist('exercise[]')
-        new_exercise_names = request.form.getlist('new_exercise[]')
-        reps = request.form.getlist('reps[]')
-        sets = request.form.getlist('sets[]')
-
-        workout.name = name
-        for i in range(len(exercise_ids)):
-            if exercise_ids[i] == 'other' and new_exercise_names[i].strip():
-                new_exercise = Exerciselist(name=new_exercise_names[i].strip(), creator_id=current_user.id)
-                db.session.add(new_exercise)
-                db.session.flush()  # Ensure the new exercise has an ID
-                exercise_id = new_exercise.id
-            else:
-                exercise_id = exercise_ids[i]
-            
-            if i < len(workout.exercisesets):
-                exercise_set = workout.exercisesets[i]
-                exercise_set.exercise_id = exercise_id
-                exercise_set.reps = reps[i]
-                exercise_set.sets = sets[i]
-            else:
-                exercise_set = ExerciseSet(workout_id=workout.id, exercise_id=exercise_id, reps=reps[i], sets=sets[i])
-                workout.exercisesets.append(exercise_set)
-
-        while len(workout.exercisesets) > len(exercise_ids):
-            workout.exercisesets.pop()
-
-        db.session.commit()
-
-        flash("Workout updated successfully.", category="success")
-        return redirect(url_for('all_workouts'))
-    return render_template('edit_workout.html', workout=workout, exercises=exercises)
-
-
-
-@app.route('/workouts/<int:workout_id>/like', methods=['POST'])
-@login_required
-def like_workout(workout_id):
-    workout = Workout.query.get(workout_id)
-    user_reaction = UserReaction.query.filter_by(user_id=current_user.id, workout_id=workout_id).first()
-    if user_reaction:
-        if user_reaction.reaction == 'like':
-            flash('You have already liked this workout.', category='danger')
-        else:
-            user_reaction.reaction = 'like'
-            workout.likes += 1
-            workout.dislikes -= 1
-            db.session.commit()
-    elif workout:
-        workout.likes += 1
-        db.session.add(UserReaction(user_id=current_user.id, workout_id=workout_id, reaction='like'))
-        db.session.commit()
-    return redirect(url_for('workout', workout_id=workout_id))
-
-@app.route('/workouts/<int:workout_id>/dislike', methods=['POST'])
-@login_required
-def dislike_workout(workout_id):
-    workout = Workout.query.get(workout_id)
-    user_reaction = UserReaction.query.filter_by(user_id=current_user.id, workout_id=workout_id).first()
-    if user_reaction:
-        if user_reaction.reaction == 'dislike':
-            flash('You have already disliked this workout.', category='danger')
-        else:
-            user_reaction.reaction = 'dislike'
-            workout.likes -= 1
-            workout.dislikes += 1
-            db.session.commit()
-    elif workout and workout.likes > 0:
-        workout.dislikes += 1
-        db.session.add(UserReaction(user_id=current_user.id, workout_id=workout_id, reaction='dislike'))
-        db.session.commit()
-    return redirect(url_for('workout', workout_id=workout_id))
-
 
 
 
@@ -264,11 +93,12 @@ def create_workout():
     
     if request.method == 'POST':
         name = request.form["name"]
+        privacy = request.form["privacy"]  # Get the privacy setting
         exercise_ids = request.form.getlist('exercise[]')
         reps = request.form.getlist('reps[]')
         sets = request.form.getlist('sets[]')
 
-        workout = Workout(name=name, creator_id=current_user.id)
+        workout = Workout(name=name, creator_id=current_user.id, privacy=privacy)  # Save the privacy setting
         db.session.add(workout)
         db.session.commit()
 
@@ -285,7 +115,7 @@ def create_workout():
                 rep = int(reps[i])
                 set_count = int(sets[i])
             except ValueError:
-                flash(f"Invalid input for reps or sets: {reps[i]}, {sets[i]}", category="error")
+                flash(f"Incorrect input for reps or sets: {reps[i]}, {sets[i]}", category="error")
                 return redirect(url_for('create_workout'))
 
             exerciseset = ExerciseSet(
@@ -302,6 +132,217 @@ def create_workout():
         return redirect(url_for('all_workouts'))
 
     return render_template('create_workout.html', exercises=exercises)
+
+
+@app.route("/favorite", methods=["GET", "POST"])
+@login_required
+def favorite_workouts():
+    if request.method == "POST":
+        workout_id = request.form.get('workout_id')
+        workout = Workout.query.get(workout_id)
+        
+        
+        if workout in current_user.favorite_workouts:
+            current_user.favorite_workouts.remove(workout)
+            db.session.commit()
+
+
+    return render_template('favorite.html', workouts=current_user.favorite_workouts)
+    
+
+@app.route('/workouts/<int:workout_id>/favorite', methods=['POST'])
+@login_required
+def favorite_workout(workout_id):
+    workout = Workout.query.get(workout_id)
+    
+    if request.form.get('_method') == 'DELETE':
+        current_user.favorite_workouts.remove(workout)
+        db.session.commit()
+        flash("Workout unfavored successfully", category="warning")
+        return redirect(url_for('favorite_workouts'))
+
+    if workout not in current_user.favorite_workouts:
+        current_user.favorite_workouts.append(workout)
+        flash("Workout favored successfully.", category="success")
+    else:
+        current_user.favorite_workouts.remove(workout)
+        flash("Workout unfavored successfully.", category="warning")
+    
+    db.session.commit()
+    
+    return redirect(url_for('workout', workout_id=workout_id))
+
+
+@app.route("/myworkouts",methods = ["GET","POST"])
+@login_required
+def created_workouts():
+    if request.form.get('_method') == 'DELETE':
+        current_user.favorite_workouts.remove(workout)
+        db.session.commit()
+        return redirect(url_for('favorite_workouts'))
+    
+    
+    # print(current_user.created_workouts)  # Debug print statement
+    return render_template('myworkouts.html')
+
+
+@app.route("/workouts/<int:workout_id>/delete", methods=["POST"])
+@login_required
+def delete_workout(workout_id):
+    workout = Workout.query.get(workout_id)
+    
+
+    if workout is None or workout.creator != current_user:
+        flash("Unauthorized action.", category="danger")
+        return redirect(url_for('all_workouts'))
+
+
+    # Delete the workout
+    db.session.delete(workout)
+    db.session.commit()
+    flash("Workout deleted successfully.", category="success")
+    
+    return redirect(url_for('created_workouts'))
+
+
+
+
+@app.route("/workouts/<int:workout_id>", methods=["GET", "POST"])
+@login_required
+def workout(workout_id):
+    workout = Workout.query.filter_by(id=workout_id).first()
+    
+    if workout is None:
+        flash("Workout not found!", category="danger")
+        return redirect(url_for('all_workouts'))
+    
+    exercise_sets = ExerciseSet.query.filter_by(workout_id=workout.id).all()
+    
+    # print("Exercise Sets:", exercise_sets)  # debug if exercise_sets contains data
+    
+    workout.exercisesets = exercise_sets
+    
+    # print("Workout:", workout)  # debug if workout object is correctly fetched
+    
+    return render_template('workout.html', workout=workout)
+
+
+@app.route("/workouts/<int:workout_id>/edit", methods=["GET","POST"])
+@login_required
+def edit_workout(workout_id):
+    workout = Workout.query.get(workout_id)
+    exercises = Exerciselist.query.filter(
+        (Exerciselist.creator_id == None) | (Exerciselist.creator_id == current_user.id)
+    ).order_by(Exerciselist.name).all()
+
+    if workout is None or workout.creator != current_user:
+        flash("Unauthorized action.", category="danger")
+        return redirect(url_for('all_workouts'))
+
+    if request.method == 'POST':
+        name = request.form.get('name')
+        privacy = request.form.get('privacy')  
+        exercise_ids = request.form.getlist('exercise[]')
+        new_exercise_names = request.form.getlist('new_exercise[]')
+        reps = request.form.getlist('reps[]')
+        sets = request.form.getlist('sets[]')
+        workout.name = name
+        workout.privacy = privacy  
+        
+        # adding a new exercise 
+        for i in range(len(exercise_ids)):
+            if exercise_ids[i] == 'other' and new_exercise_names[i].strip():
+                new_exercise = Exerciselist(name=new_exercise_names[i].strip(), creator_id=current_user.id)
+                db.session.add(new_exercise)
+                db.session.flush()  # new exercise has an ID
+                exercise_id = new_exercise.id
+            else:
+                exercise_id = exercise_ids[i]
+
+            if i < len(workout.exercisesets):
+                exercise_set = workout.exercisesets[i]
+                exercise_set.exercise_id = exercise_id
+                exercise_set.reps = reps[i]
+                exercise_set.sets = sets[i]
+            else:
+                exercise_set = ExerciseSet(workout_id=workout.id, exercise_id=exercise_id, reps=reps[i], sets=sets[i])
+                workout.exercisesets.append(exercise_set)
+
+        while len(workout.exercisesets) > len(exercise_ids):
+            workout.exercisesets.pop()
+
+        db.session.commit()
+
+        flash("Workout updated successfully", category="success")
+        return redirect(url_for('all_workouts'))
+
+    return render_template('edit_workout.html', workout=workout, exercises=exercises)
+
+
+
+
+@app.route('/workouts/<int:workout_id>/like', methods=['POST'])
+@login_required
+def like_workout(workout_id):
+    workout = Workout.query.get(workout_id)
+    user_reaction = UserReaction.query.filter_by(user_id=current_user.id, workout_id=workout_id).first()
+    
+    if user_reaction:
+        if user_reaction.reaction == 'like':
+            # already liked the workout remove the like
+            workout.likes -= 1
+            db.session.delete(user_reaction)
+            db.session.commit()
+            flash('You removed your like from this workout.', category='success')
+        else:
+            #  change to like
+            user_reaction.reaction = 'like'
+            workout.likes += 1
+            workout.dislikes -= 1
+            db.session.commit()
+            flash('You changed your reaction to like.', category='success')
+    else:
+        # jsut add a like
+        workout.likes += 1
+        db.session.add(UserReaction(user_id=current_user.id, workout_id=workout_id, reaction='like'))
+        db.session.commit()
+        flash('You liked this workout.', category='success')
+    
+    return redirect(url_for('workout', workout_id=workout_id))
+
+@app.route('/workouts/<int:workout_id>/dislike', methods=['POST'])
+@login_required
+def dislike_workout(workout_id):
+    workout = Workout.query.get(workout_id)
+    user_reaction = UserReaction.query.filter_by(user_id=current_user.id, workout_id=workout_id).first()
+    
+    if user_reaction:
+        if user_reaction.reaction == 'dislike':
+            # already disliked the workout remove the dislike
+            workout.dislikes -= 1
+            db.session.delete(user_reaction)
+            db.session.commit()
+            flash('You removed your dislike from this workout.', category='success')
+        else:
+            # liked the workout change to dislike
+            user_reaction.reaction = 'dislike'
+            workout.likes -= 1
+            workout.dislikes += 1
+            db.session.commit()
+            flash('You changed your reaction to dislike.', category='success')
+    else:
+        # just add a dislike
+        workout.dislikes += 1
+        db.session.add(UserReaction(user_id=current_user.id, workout_id=workout_id, reaction='dislike'))
+        db.session.commit()
+        flash('You disliked this workout.', category='success')
+    
+    return redirect(url_for('workout', workout_id=workout_id))
+
+
+
+
+
 
 
 
@@ -330,12 +371,34 @@ def profile():
     return render_template('myprofile.html', user=user)
 
 
+@app.route('/edit_profile', methods=['POST'])
+@login_required
+def edit_profile():
+    if request.method == 'POST':
+        firstname = request.form.get('firstname')
+        lastname = request.form.get('lastname')
+        height = request.form.get('height')
+        weight = request.form.get('weight')
+        
+       
+        if firstname and lastname and height and weight:
+            current_user.firstname = firstname
+            current_user.lastname = lastname
+            current_user.height = height
+            current_user.weight = weight
+            db.session.commit()
+            flash('Profile updated successfully!', 'success')
+        else:
+            flash('All fields need to be filled', 'danger')
+        return redirect(url_for('profile'))
+    
+    return render_template('myprofile.html')
 
 
 @app.route('/workout_history', methods=['GET'])
 @login_required
 def workout_history():
-    completed_workouts = CompletedWorkout.query.filter_by(user_id=current_user.id).all()
+    completed_workouts = CompletedWorkout.query.filter_by(user_id=current_user.id).order_by(CompletedWorkout.date.desc()).all()
     return render_template('workout_history.html', completed_workouts=completed_workouts)
 
 
@@ -349,70 +412,144 @@ def add_completed_workout():
     ).all()
     
     selected_workout = None
+    exercises = Exerciselist.query.filter(
+        (Exerciselist.creator_id == None) | (Exerciselist.creator_id == current_user.id)
+    ).order_by(Exerciselist.name).all()
     
     if request.method == "POST":
         workout_id = request.form.get("workout_id")
         selected_workout = Workout.query.get(workout_id)
         
         if not selected_workout:
-            flash("Invalid workout selected.", "danger")
+            flash("Invalid workout selected", "danger")
             return redirect(url_for("add_completed_workout"))
 
-    return render_template("add_completed_workout.html", workouts=workouts, selected_workout=selected_workout)
+    return render_template("add_completed_workout.html", workouts=workouts, selected_workout=selected_workout, exercises=exercises)
+
+
 
 
 @app.route('/save_completed_workout', methods=['POST'])
 @login_required
 def save_completed_workout():
-    workout_id = request.form.get('workout_id')
-    workout = Workout.query.get(workout_id)
-    
-    if not workout:
-        flash("Invalid workout selected.", "danger")
-        return redirect(url_for('add_completed_workout'))
-    
-    total_sets = 0
-    exercise_logs = []
+    try:
+        workout_id = request.form.get('workout_id')
+        workout = Workout.query.get(workout_id)
 
-    # Collect data from the form and create CompletedExerciseSet instances
-    for exercise_set in workout.exercisesets:
-        exercise_id = exercise_set.exercise.id
-        weight = request.form.get(f'weight_{exercise_id}')
-        sets = request.form.get(f'sets_{exercise_id}')
-        reps = request.form.get(f'reps_{exercise_id}')
-
-        if sets is None or reps is None:
-            flash("Please fill out all fields for sets and reps.", "danger")
+        if not workout:
+            flash("Invalid workout selected.", "danger")
             return redirect(url_for('add_completed_workout'))
-        
-        total_sets += int(sets)
-        exercise_logs.append(
-            CompletedExerciseSet(
-                exercise_id=exercise_id,
-                weight=weight if weight else None,  # Handle optional weight
-                sets=sets,
-                reps=reps
-            )
-        )
-    
-    # Create a new CompletedWorkout instance
-    completed_workout = CompletedWorkout(
-        user_id=current_user.id,
-        workout_id=workout_id,
-        total_sets=total_sets
-    )
-    db.session.add(completed_workout)
-    db.session.commit()  # Commit to get the ID of the completed_workout
 
-    # Associate each CompletedExerciseSet with the completed_workout
-    for log in exercise_logs:
-        log.completed_workout_id = completed_workout.id
-        db.session.add(log)
+        total_sets = 0
+        exercise_logs = []
+
+        # get the forms data and create CompletedExerciseSet for existing exercises
+        for exercise_set in workout.exercisesets:
+            if request.form.get(f'delete_exercise_{exercise_set.exercise.id}') == 'true':
+                continue
+
+            exercise_id = exercise_set.exercise.id
+            weight = request.form.get(f'weight_{exercise_id}')
+            sets = request.form.get(f'sets_{exercise_id}')
+            reps = request.form.get(f'reps_{exercise_id}')
+
+            if not sets or not reps:
+                flash("Please fill out all fields for sets and reps.", "danger")
+                return redirect(url_for('add_completed_workout'))
+
+            total_sets += int(sets)
+            exercise_logs.append(
+                CompletedExerciseSet(
+                    exercise_id=exercise_id,
+                    weight=weight if weight else None,  #  weight is optional
+                    sets=sets,
+                    reps=reps
+                )
+            )
+
+        #  newly added exercises
+        for key in request.form:
+            if key.startswith('exercise_new_'):
+                new_exercise_id = key.split('_')[-1]
+                if request.form.get(f'delete_exercise_{new_exercise_id}') == 'true':
+                    continue
+
+                exercise_id = request.form.get(f'exercise_new_{new_exercise_id}')
+                weight = request.form.get(f'weight_new_{new_exercise_id}')
+                sets = request.form.get(f'sets_new_{new_exercise_id}')
+                reps = request.form.get(f'reps_new_{new_exercise_id}')
+
+                if not sets or not reps:
+                    flash("Please fill out all fields for sets and reps", "danger")
+                    return redirect(url_for('add_completed_workout'))
+
+                total_sets += int(sets)
+                exercise_logs.append(
+                    CompletedExerciseSet(
+                        exercise_id=exercise_id,
+                        weight=weight if weight else None,  # weight is optoinal
+                        sets=sets,
+                        reps=reps
+                    )
+                )
+
+        # new CompletedWorkout 
+        completed_workout = CompletedWorkout(
+            user_id=current_user.id,
+            workout_id=workout_id,
+            total_sets=total_sets
+        )
+        db.session.add(completed_workout)
+        db.session.commit() 
+
+        # link each CompletedExerciseSet with the completed_workout
+        for log in exercise_logs:
+            log.completed_workout_id = completed_workout.id
+            db.session.add(log)
+
+        db.session.commit()
+
+        flash("Completed workout saved successfully!", "success")
+        return redirect(url_for('workout_history'))
+
+    except Exception as e:
+       
+        flash("An error occurred while saving the completed workout. Please try again.", "danger")
+        return redirect(url_for('add_completed_workout'))
+
+
+@app.route('/manage_workout_history', methods=['POST'])
+@login_required
+def manage_workout_history():
+    action = request.form.get('action')
     
-    db.session.commit()
-    
-    flash("Completed workout logged successfully!", "success")
+    try:
+        if action == 'delete':
+            workout_id = request.form.get('workout_id')
+            completed_workout = CompletedWorkout.query.get(workout_id)
+            if not completed_workout or completed_workout.user_id != current_user.id:
+                flash("Invalid workout selected.", "danger")
+                return redirect(url_for('workout_history'))
+            
+            # delete particular completed workout
+            db.session.delete(completed_workout)
+            db.session.commit()
+            flash("Workout deleted successfully.", "success")
+        
+        elif action == 'clear':
+            # delete all completed workouts 
+            CompletedWorkout.query.filter_by(user_id=current_user.id).delete()
+            db.session.commit()
+            flash("Workout history cleared successfully.", "success")
+        
+    except Exception as e:
+        db.session.rollback()
+        flash("An error occurred. Please try again.", "danger")
+
     return redirect(url_for('workout_history'))
+
+
+
 
 
 

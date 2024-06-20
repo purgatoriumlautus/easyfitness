@@ -17,9 +17,9 @@ with app.app_context():
     db.session.add(user2)
 
     # Create workouts
-    fullbody = Workout(name="Full Body Workout", creator_id=user1.id, likes=10, dislikes=2)
-    upper_body = Workout(name="Upper Body Workout", creator_id=user1.id, likes=8, dislikes=1)
-    legs = Workout(name="Legs Workout", creator_id=user1.id, likes=12, dislikes=0)
+    fullbody = Workout(name="Full Body Workout", creator_id=1, likes=0, dislikes=0,privacy = "public")
+    upper_body = Workout(name="Upper Body Workout", creator_id=1, likes=2, dislikes=0,privacy = "public")
+    legs = Workout(name="Legs Workout", creator_id=1, likes=0, dislikes=0,privacy = "public")
     db.session.add(fullbody)
     db.session.add(upper_body)
     db.session.add(legs)
