@@ -227,7 +227,7 @@ def workout(workout_id):
     return render_template('workout.html', workout=workout)
 
 
-@app.route("/workouts/<int:workout_id>/edit", methods=["GET","POST"])
+@app.route("/workouts/<int:workout_id>/edit", methods=["GET", "POST"])
 @login_required
 def edit_workout(workout_id):
     workout = Workout.query.get(workout_id)
@@ -241,35 +241,36 @@ def edit_workout(workout_id):
 
     if request.method == 'POST':
         name = request.form.get('name')
-        privacy = request.form.get('privacy')  
+        privacy = request.form.get('privacy')
         exercise_ids = request.form.getlist('exercise[]')
         new_exercise_names = request.form.getlist('new_exercise[]')
         reps = request.form.getlist('reps[]')
         sets = request.form.getlist('sets[]')
         workout.name = name
-        workout.privacy = privacy  
-        
-        # adding a new exercise 
+        workout.privacy = privacy
+
+        # Clear the existing exercise sets
+        workout.exercisesets = []
+
+        # Add new or existing exercises
         for i in range(len(exercise_ids)):
-            if exercise_ids[i] == 'other' and new_exercise_names[i].strip():
+            if exercise_ids[i] == 'other' and i < len(new_exercise_names) and new_exercise_names[i].strip():
                 new_exercise = Exerciselist(name=new_exercise_names[i].strip(), creator_id=current_user.id)
                 db.session.add(new_exercise)
-                db.session.flush()  # new exercise has an ID
+                db.session.flush()  # Ensure the new exercise has an ID
                 exercise_id = new_exercise.id
             else:
                 exercise_id = exercise_ids[i]
 
-            if i < len(workout.exercisesets):
-                exercise_set = workout.exercisesets[i]
-                exercise_set.exercise_id = exercise_id
-                exercise_set.reps = reps[i]
-                exercise_set.sets = sets[i]
-            else:
-                exercise_set = ExerciseSet(workout_id=workout.id, exercise_id=exercise_id, reps=reps[i], sets=sets[i])
-                workout.exercisesets.append(exercise_set)
+            try:
+                rep = int(reps[i])
+                set_count = int(sets[i])
+            except ValueError:
+                flash(f"Incorrect input for reps or sets: {reps[i]}, {sets[i]}", category="error")
+                return redirect(url_for('edit_workout', workout_id=workout.id))
 
-        while len(workout.exercisesets) > len(exercise_ids):
-            workout.exercisesets.pop()
+            exercise_set = ExerciseSet(workout_id=workout.id, exercise_id=exercise_id, reps=rep, sets=set_count)
+            workout.exercisesets.append(exercise_set)
 
         db.session.commit()
 

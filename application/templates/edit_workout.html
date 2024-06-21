@@ -31,7 +31,7 @@
                                     {% endfor %}
                                     <option value="other">Other (+)</option>
                                 </select>
-                                <input type="text" class="form-control new-exercise-input" name="new_exercise_{{ loop.index0 }}" placeholder="Enter new exercise name" style="display: none;">
+                                <input type="text" class="form-control new-exercise-input" name="new_exercise[]" placeholder="Enter new exercise name" style="display: none;">
                                 <div class="row g-2">
                                     <div class="col">
                                         <input type="number" class="form-control" name="reps[]" placeholder="Repetitions" value="{{ exercise_set.reps }}" required>
@@ -40,6 +40,7 @@
                                         <input type="number" class="form-control" name="sets[]" placeholder="Sets" value="{{ exercise_set.sets }}" required>
                                     </div>
                                 </div>
+                                <button type="button" class="btn btn-danger btn-sm remove-exercise mt-2">Remove</button>
                             </div>
                             {% endfor %}
                         </div>
@@ -52,66 +53,51 @@
     </div>
 </div>
 <script>
-    // ad exercvise button
-    document.getElementById('addExercise').addEventListener('click', function() {
-        
-        // Clone an existing exercise set
-        var exerciseSet = document.querySelector('.exercise-set').cloneNode(true);
-        
-        // clear values in the  exercise set
-        exerciseSet.querySelector('[name="exercise[]"]').value = '';
-        exerciseSet.querySelector('[name="reps[]"]').value = '';
-        exerciseSet.querySelector('[name="sets[]"]').value = '';
-        exerciseSet.querySelector('.new-exercise-name').style.display = 'none';
-        
-        // add cloned exercise set to the exercise sets container
-        document.getElementById('exerciseSets').appendChild(exerciseSet);
-
-        //  listener to the remove Exercise button in the new set
-        var removeButton = exerciseSet.querySelector('.remove-exercise');
-        removeButton.addEventListener('click', function() {
-            var exerciseSets = document.querySelectorAll('.exercise-set');
-            
-            // remove the exercise set if there is more than one
-            if (exerciseSets.length > 1) {
-                this.parentElement.remove();
-            }
-        });
-
-        // add event listener to the exercise dropdown in the new set
-        exerciseSet.querySelector('[name="exercise[]"]').addEventListener('change', function() {
-            var newExerciseInput = this.parentElement.querySelector('.new-exercise-name');
-            
-            //  new exercise input if 
-            if (this.value === 'other') {
-                newExerciseInput.style.display = 'block';
-            } else {
-                newExerciseInput.style.display = 'none';
-            }
-        });
-    });
-    
     document.addEventListener('DOMContentLoaded', function() {
-        // listeners to existing remove exercise buttons
-        var removeButtons = document.querySelectorAll('.remove-exercise');
-        removeButtons.forEach(function(removeButton) {
-            removeButton.addEventListener('click', function() {
-                var exerciseSets = document.querySelectorAll('.exercise-set');
-                
-                // remove the exercise set if there is more than one
-                if (exerciseSets.length > 1) {
-                    this.parentElement.remove();
+        // Add an event listener for the "Add Exercise" button
+        document.getElementById('addExercise').addEventListener('click', function() {
+            // Get the container for exercise sets
+            var exerciseSetsContainer = document.getElementById('exercise-sets');
+            // Clone an existing exercise set
+            var exerciseSetTemplate = document.querySelector('.exercise-set').cloneNode(true);
+
+            // Reset the values in the cloned exercise set
+            exerciseSetTemplate.querySelector('.form-select').value = '';
+            exerciseSetTemplate.querySelector('.new-exercise-input').style.display = 'none';
+            exerciseSetTemplate.querySelector('.new-exercise-input').value = '';
+            exerciseSetTemplate.querySelector('[name="reps[]"]').value = '';
+            exerciseSetTemplate.querySelector('[name="sets[]"]').value = '';
+
+            // Add an event listener for the "Remove" button in the cloned exercise set
+            exerciseSetTemplate.querySelector('.remove-exercise').addEventListener('click', function() {
+                this.closest('.exercise-set').remove();
+            });
+
+            // Add an event listener for the exercise dropdown in the cloned exercise set
+            exerciseSetTemplate.querySelector('.exercise-select').addEventListener('change', function() {
+                var newExerciseInput = this.closest('.exercise-set').querySelector('.new-exercise-input');
+                if (this.value === 'other') {
+                    newExerciseInput.style.display = 'block';
+                } else {
+                    newExerciseInput.style.display = 'none';
                 }
+            });
+
+            // Append the cloned exercise set to the container
+            exerciseSetsContainer.appendChild(exerciseSetTemplate);
+        });
+
+        // Add event listeners for existing "Remove" buttons
+        document.querySelectorAll('.remove-exercise').forEach(function(button) {
+            button.addEventListener('click', function() {
+                this.closest('.exercise-set').remove();
             });
         });
 
-        // listeners to existing exercise dropdowns
-        var exerciseDropdowns = document.querySelectorAll('[name="exercise[]"]');
-        exerciseDropdowns.forEach(function(dropdown) {
-            dropdown.addEventListener('change', function() {
-                var newExerciseInput = this.parentElement.querySelector('.new-exercise-name');
-                
-                // if other is selected
+        // Add event listeners for existing exercise dropdowns
+        document.querySelectorAll('.exercise-select').forEach(function(select) {
+            select.addEventListener('change', function() {
+                var newExerciseInput = this.closest('.exercise-set').querySelector('.new-exercise-input');
                 if (this.value === 'other') {
                     newExerciseInput.style.display = 'block';
                 } else {
