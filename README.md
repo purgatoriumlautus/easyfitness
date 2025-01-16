@@ -60,6 +60,7 @@ python python .\create_db.py
 ```python .\drop_tables.py``` 
 
 **To apply changes in models use:**
-   1) ```flask db init```
-   2)``` flask db migrate ```
-   3) ```flask db upgrade```
+```
+flask db init
+flask db migrate
+flask db upgrade```
