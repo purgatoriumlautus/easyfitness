@@ -63,4 +63,5 @@ python python .\create_db.py
 ```
 flask db init
 flask db migrate
-flask db upgrade```
+flask db upgrade
+```
